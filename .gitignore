@@ -19,3 +19,6 @@ dist/
 *.iml
 .DS_Store
 Thumbs.db
+
+# Downloaded test data (see backend/scripts/fetch-kosit-testsuite.sh)
+.testsuite/

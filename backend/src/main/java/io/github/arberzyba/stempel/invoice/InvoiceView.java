@@ -47,10 +47,12 @@ public record InvoiceView(
             BigDecimal amount) {
     }
 
+    /** As stated in the invoice; prepaid is null if nothing was paid in advance. */
     public record Totals(
             BigDecimal net,
             BigDecimal vat,
             BigDecimal gross,
+            BigDecimal prepaid,
             BigDecimal duePayable) {
     }
 

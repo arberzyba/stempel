@@ -126,10 +126,16 @@ export function InvoiceDocument({ invoice, stamp, highlight }: InvoiceDocumentPr
           <span>Gesamt</span>
           <span className="mono">{money(totals.gross)}</span>
         </div>
-        {totals.duePayable !== totals.gross && (
+        {totals.prepaid != null && totals.prepaid !== 0 && (
           <div className="doc__totals-row">
-            <span>Zu zahlen</span>
-            <span className="mono">{money(totals.duePayable)}</span>
+            <span className="muted">Bereits gezahlt</span>
+            <span className="mono">−{money(totals.prepaid)}</span>
+          </div>
+        )}
+        {totals.duePayable !== totals.gross && (
+          <div className="doc__totals-row doc__totals-row--due">
+            <span>{totals.duePayable < 0 ? 'Guthaben' : 'Zu zahlen'}</span>
+            <span className="mono">{money(Math.abs(totals.duePayable))}</span>
           </div>
         )}
       </div>

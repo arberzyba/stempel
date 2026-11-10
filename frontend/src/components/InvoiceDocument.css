@@ -188,6 +188,10 @@
   font-weight: 600;
 }
 
+.doc__totals-row--due {
+  font-weight: 600;
+}
+
 .doc__payment {
   padding-top: 20px;
   border-top: 1px solid var(--color-line);

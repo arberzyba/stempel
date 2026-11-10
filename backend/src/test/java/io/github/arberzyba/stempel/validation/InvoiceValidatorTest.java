@@ -50,6 +50,27 @@ class InvoiceValidatorTest {
                 .allMatch(f -> f.severity() == Severity.NOTICE);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"03.01a-INVOICE_uncefact.xml", "03.01a-INVOICE_ubl.xml"})
+    void roundingPerLineIsValid(String fileName) throws IOException {
+        // Stated totals one cent off a recalculation are still valid (see InvoiceReaderTest).
+        assertThat(validator.validate(sample(fileName), fileName).valid()).isTrue();
+    }
+
+    @Test
+    void warnsThatXRechnungExtensionIsOnlyPartlyChecked() throws IOException {
+        ValidationReport report = validator.validate(sample("04.05a-INVOICE_uncefact.xml"), "04.05a.xml");
+
+        assertThat(report.profile()).isEqualTo("XRechnung 3.0 Extension");
+        assertThat(report.findings()).anySatisfy(f -> {
+            assertThat(f.severity()).isEqualTo(Severity.WARNING);
+            assertThat(f.title()).isEqualTo("Diese XRechnung-Variante prüft Stempel nur teilweise");
+        });
+        // The plain-XRechnung samples get no such warning.
+        assertThat(validator.validate(sample("01.01a-INVOICE_ubl.xml"), "01.01a.xml").findings())
+                .noneMatch(f -> f.severity() == Severity.WARNING);
+    }
+
     @Test
     void findsAWrongTotal() throws IOException {
         byte[] wrongTotal = changeSample("01.01a-INVOICE_uncefact.xml",
@@ -124,6 +145,8 @@ class InvoiceValidatorTest {
     @ParameterizedTest
     @CsvSource({
         "urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0, XRechnung 3.0",
+        "urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0#conformant#urn:xeinkauf.de:kosit:extension:xrechnung_3.0, XRechnung 3.0 Extension",
+        "urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0#compliant#urn:xeinkauf.de:kosit:xrechnung:cvd_0.9, XRechnung 3.0 CVD",
         "urn:cen.eu:en16931:2017,                                                EN 16931",
         "urn:factur-x.eu:1p0:minimum,                                            ZUGFeRD MINIMUM",
         "urn:cen.eu:en16931:2017#compliant#urn:factur-x.eu:1p0:basic,            ZUGFeRD BASIC"

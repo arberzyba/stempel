@@ -25,10 +25,6 @@ export function CheckPanel({ validation, fileName, selected, onSelect }: CheckPa
       {validation.status === 'done' && (
         <Findings report={validation.report} selected={selected} onSelect={onSelect} />
       )}
-
-      <p className="check__note muted">
-        Die Summen in der Ansicht hat Stempel aus den Positionen nachgerechnet.
-      </p>
     </aside>
   )
 }

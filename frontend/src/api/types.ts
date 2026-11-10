@@ -29,10 +29,13 @@ export interface VatLine {
   amount: number | null
 }
 
+/** As stated in the invoice (not recalculated). */
 export interface Totals {
   net: number
   vat: number
   gross: number
+  /** Already paid, e.g. a down payment (BT-113); null if nothing was paid. */
+  prepaid: number | null
   duePayable: number
 }
 

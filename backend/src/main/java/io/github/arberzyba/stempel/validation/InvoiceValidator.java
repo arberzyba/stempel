@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import org.mustangproject.validator.EPart;
 import org.mustangproject.validator.ESeverity;
@@ -32,6 +33,9 @@ public class InvoiceValidator {
     // Rule texts start with their ID, e.g. "[BR-CO-15]-Invoice total ..." or "[BR-DE-15] Das Element ...".
     private static final Pattern RULE_PREFIX = Pattern.compile("^\\[[^\\]]+\\]\\s*-?\\s*");
     private static final Pattern XRECHNUNG_VERSION = Pattern.compile("xrechnung_(\\d+\\.\\d+)");
+    private static final String UNSUPPORTED_VERSION = "Unsupported XR version";
+    /** Our own explanation key in rule-explanations-de.properties (not an official rule). */
+    static final String PARTIAL_CHECK = "STEMPEL-PARTIAL-CHECK";
 
     private final RuleExplanations explanations;
 
@@ -47,8 +51,13 @@ public class InvoiceValidator {
         validator.validate(content, fileName);
         ValidationContext context = validator.getContext();
 
-        List<Finding> findings = context.getResults().stream()
-                .map(this::toFinding)
+        boolean partlySupported = isPartlySupported(context.getProfile());
+        List<Finding> findings = Stream.concat(
+                        partlySupported ? Stream.of(partialCheckWarning()) : Stream.empty(),
+                        context.getResults().stream()
+                                // Mustang can't check XRechnung CVD fully; our warning above explains that.
+                                .filter(item -> !UNSUPPORTED_VERSION.equals(cleanMessage(item.getMessage())))
+                                .map(this::toFinding))
                 .sorted(Comparator.comparing(Finding::severity).thenComparing(Finding::ruleId))
                 .toList();
 
@@ -67,6 +76,25 @@ public class InvoiceValidator {
         String text = explanation.map(Explanation::text).orElse(null);
         String area = explanation.map(Explanation::area).orElseGet(() -> areaFromLocation(item.getLocation()));
         return new Finding(severity, ruleId, title, text, message, area);
+    }
+
+    /**
+     * XRechnung Extension and XRechnung CVD are special variants with extra rules
+     * that Mustang 2.26.0 doesn't fully know, so some of its errors may be wrong
+     * (found with the KoSIT test suite, whose valid examples got errors).
+     */
+    public static boolean isPartlySupported(String profile) {
+        if (profile == null) {
+            return false;
+        }
+        String lower = profile.toLowerCase(Locale.ROOT);
+        return lower.contains(":extension:xrechnung") || lower.contains("xrechnung:cvd");
+    }
+
+    private Finding partialCheckWarning() {
+        Explanation text = explanations.find(PARTIAL_CHECK)
+                .orElseThrow(() -> new IllegalStateException(PARTIAL_CHECK + " is missing"));
+        return new Finding(Severity.WARNING, "", text.title(), text.text(), "", null);
     }
 
     static String cleanMessage(String message) {
@@ -140,7 +168,10 @@ public class InvoiceValidator {
         String lower = profile.toLowerCase(Locale.ROOT);
         Matcher xrechnung = XRECHNUNG_VERSION.matcher(lower);
         if (xrechnung.find()) {
-            return "XRechnung " + xrechnung.group(1);
+            String name = "XRechnung " + xrechnung.group(1);
+            if (lower.contains(":extension:xrechnung")) return name + " Extension";
+            if (lower.contains("xrechnung:cvd")) return name + " CVD";
+            return name;
         }
         if (lower.contains("factur-x.eu:1p0:minimum")) return "ZUGFeRD MINIMUM";
         if (lower.contains("factur-x.eu:1p0:basicwl")) return "ZUGFeRD BASIC WL";

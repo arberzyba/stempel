@@ -17,7 +17,7 @@ const sampleInvoice: InvoiceView = {
     { name: 'Porto + Versandkosten', description: null, quantity: 1, unit: 'XPP', unitPrice: 26.07, vatPercent: 7, netAmount: 26.07 },
   ],
   vat: [{ category: 'S', percent: 7, basis: 314.86, amount: 22.04 }],
-  totals: { net: 314.86, vat: 22.04, gross: 336.9, duePayable: 336.9 },
+  totals: { net: 314.86, vat: 22.04, gross: 336.9, prepaid: null, duePayable: 336.9 },
   payment: { terms: 'Zahlbar sofort ohne Abzug.', iban: 'DE79000000001234567890' },
 }
 

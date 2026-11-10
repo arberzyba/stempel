@@ -67,6 +67,46 @@ class InvoiceReaderTest {
         assertThat(view.payment().terms()).isEqualTo("Zahlbar sofort ohne Abzug.");
     }
 
+    /**
+     * KoSIT case 03.01a: the stated net (687.28) is one cent below a recalculation
+     * from the lines (687.29), because each line was rounded. That is legal, and
+     * Mustang used to refuse the whole file. We must show the stated amounts.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"03.01a-INVOICE_uncefact.xml", "03.01a-INVOICE_ubl.xml"})
+    void showsTotalsAsStatedEvenWithRoundingDifferences(String fileName) throws Exception {
+        InvoiceView view;
+        try (InputStream file = getClass().getResourceAsStream("/samples/" + fileName)) {
+            view = reader.read(file);
+        }
+
+        assertThat(view.totals().net()).isEqualByComparingTo("687.28");
+        assertThat(view.totals().vat()).isEqualByComparingTo("117.58");
+        assertThat(view.totals().gross()).isEqualByComparingTo("804.86");
+        assertThat(view.totals().prepaid()).isEqualByComparingTo("1030");
+        assertThat(view.totals().duePayable()).isEqualByComparingTo("-225.14");
+
+        // VAT per rate as stated, lowest rate first.
+        assertThat(view.vat()).extracting(InvoiceView.VatLine::percent, InvoiceView.VatLine::basis, InvoiceView.VatLine::amount)
+                .usingRecursiveFieldByFieldElementComparator(
+                        org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration.builder()
+                                .withComparatorForType(BigDecimal::compareTo, BigDecimal.class).build())
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple(new BigDecimal("7"), new BigDecimal("108.39"), new BigDecimal("7.59")),
+                        org.assertj.core.groups.Tuple.tuple(new BigDecimal("19"), new BigDecimal("578.89"), new BigDecimal("109.99")));
+
+        // The line Mustang would recalculate to 48.34 is shown as the file states it.
+        assertThat(view.lines()).extracting(InvoiceView.Line::netAmount)
+                .anySatisfy(amount -> assertThat(amount).isEqualByComparingTo("48.33"));
+    }
+
+    @Test
+    void hasNoPrepaidAmountWhenNothingWasPaid() throws Exception {
+        try (InputStream file = getClass().getResourceAsStream("/samples/01.01a-INVOICE_ubl.xml")) {
+            assertThat(reader.read(file).totals().prepaid()).isNull();
+        }
+    }
+
     @Test
     void readsZugferdPdf() throws Exception {
         InvoiceView view;
