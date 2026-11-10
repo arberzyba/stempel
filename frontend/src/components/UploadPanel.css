@@ -76,7 +76,7 @@
 }
 
 .upload__facts {
-  flex: 1 1 300px;
+  flex: 1 1 360px;
   margin: 0;
   padding: 32px 40px;
   display: grid;
@@ -93,6 +93,7 @@
 .upload__facts dd {
   margin: 0;
   font-size: 13px;
+  white-space: nowrap; /* keep ".xml · UBL oder CII" on one line */
 }
 
 .upload__footer {
