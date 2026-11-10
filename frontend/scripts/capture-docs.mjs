@@ -13,7 +13,7 @@ const { applyPalette, GIFEncoder, quantize } = gifenc
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const docs = path.join(root, 'docs')
 const validPdf = path.join(root, 'backend/src/test/resources/samples/EN16931_Einfach.pdf')
-const brokenXml = path.join(docs, 'demo/rechnung-mit-fehler.xml')
+const brokenXml = path.join(docs, 'demo/04-fehler-gesamtbetrag.xml')
 const baseUrl = process.env.BASE_URL ?? 'http://localhost:8080'
 
 await mkdir(docs, { recursive: true })

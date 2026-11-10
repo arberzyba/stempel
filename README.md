@@ -33,7 +33,7 @@ docker compose up --build
 
 Open http://localhost:8080. Stempel is only reachable from your own computer; the comment in `docker-compose.yml` shows how to open it to your network.
 
-No e-invoice at hand? Try `backend/src/test/resources/samples/EN16931_Einfach.pdf` (valid) and `docs/demo/rechnung-mit-fehler.xml` (wrong total).
+No e-invoice at hand? Try `backend/src/test/resources/samples/EN16931_Einfach.pdf` (valid) and `docs/demo/04-fehler-gesamtbetrag.xml` (wrong total).
 
 ## What happens to your file
 
