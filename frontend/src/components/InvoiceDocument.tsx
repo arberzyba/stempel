@@ -1,4 +1,5 @@
-import type { InvoiceView, Party } from '../api/types'
+import { useEffect, useRef, type ReactNode } from 'react'
+import type { InvoiceArea, InvoiceView, Party, Severity } from '../api/types'
 import {
   formatDate,
   formatIban,
@@ -10,20 +11,52 @@ import {
 } from '../format'
 import './InvoiceDocument.css'
 
+export interface Highlight {
+  area: InvoiceArea
+  severity: Severity
+}
+
+interface InvoiceDocumentProps {
+  invoice: InvoiceView
+  /** Placed in the top right corner, like a real stamp on paper. */
+  stamp?: ReactNode
+  /** The part of the invoice a selected finding is about. */
+  highlight?: Highlight | null
+}
+
 /** Shows an invoice laid out like a German business letter (DIN 5008). */
-export function InvoiceDocument({ invoice }: { invoice: InvoiceView }) {
+export function InvoiceDocument({ invoice, stamp, highlight }: InvoiceDocumentProps) {
   const { seller, buyer, totals, payment } = invoice
   const money = (amount: number | null | undefined) => formatMoney(amount, invoice.currency)
+  const articleRef = useRef<HTMLElement>(null)
+
+  // Scroll the highlighted part into view, e.g. on a phone where the panel is below the invoice.
+  // Depends on the area string, not the object, so it doesn't re-run on every render.
+  const highlightedArea = highlight?.area
+  useEffect(() => {
+    if (!highlightedArea) return
+    const element = articleRef.current?.querySelector(`[data-area="${highlightedArea}"]`)
+    element?.scrollIntoView?.({ behavior: 'smooth', block: 'center' })
+  }, [highlightedArea])
+
+  // Adds the highlight class to the part that matches the selected finding.
+  const area = (name: InvoiceArea, className: string) => ({
+    'data-area': name,
+    className: highlight?.area === name
+      ? `${className} doc__highlight doc__highlight--${highlight.severity.toLowerCase()}`
+      : className,
+  })
 
   return (
-    <article className="doc" aria-label="Rechnung">
-      <div className="doc__letterhead">
+    <article className="doc" aria-label="Rechnung" ref={articleRef}>
+      {stamp}
+      <div {...area('seller', 'doc__letterhead')}>
         <span className="doc__seller">{seller.name ?? 'Unbekannter Absender'}</span>
         <span className="doc__seller-address">{addressLine(seller)}</span>
       </div>
 
       <div className="doc__head">
-        <address className="doc__recipient">
+        <address {...area('buyer', 'doc__recipient')}>
           <span className="doc__return-line">{[seller.name, addressLine(seller)].filter(Boolean).join(' · ')}</span>
           <span className="doc__recipient-name">{buyer.name ?? '–'}</span>
           {buyer.street && <span>{buyer.street}</span>}
@@ -42,7 +75,7 @@ export function InvoiceDocument({ invoice }: { invoice: InvoiceView }) {
 
       <h1 className="doc__title">Rechnung</h1>
 
-      <div className="doc__table-wrap">
+      <div {...area('lines', 'doc__table-wrap')}>
         <table className="doc__table">
           <thead>
             <tr>
@@ -75,7 +108,7 @@ export function InvoiceDocument({ invoice }: { invoice: InvoiceView }) {
         </table>
       </div>
 
-      <div className="doc__totals">
+      <div {...area('totals', 'doc__totals')}>
         <div className="doc__totals-row">
           <span className="muted">Summe netto</span>
           <span className="mono">{money(totals.net)}</span>
@@ -101,7 +134,7 @@ export function InvoiceDocument({ invoice }: { invoice: InvoiceView }) {
         )}
       </div>
 
-      <footer className="doc__payment">
+      <footer {...area('payment', 'doc__payment')}>
         {payment.terms && <span>{payment.terms}</span>}
         <span className="muted">IBAN: <span className="mono">{payment.iban ? formatIban(payment.iban) : 'nicht angegeben'}</span></span>
       </footer>

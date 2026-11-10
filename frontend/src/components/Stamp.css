@@ -1,0 +1,61 @@
+.stamp {
+  position: absolute;
+  top: 40px;
+  right: 48px;
+  padding: 8px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 2.5px solid currentColor;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  opacity: 0.9;
+  transform: rotate(-7deg);
+  animation: stamp-in 220ms ease-out;
+  pointer-events: none;
+}
+
+.stamp--ok {
+  color: var(--color-ok);
+}
+
+.stamp--error {
+  color: var(--color-error);
+}
+
+.stamp__main {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.stamp__sub {
+  margin-top: 4px;
+  padding-top: 3px;
+  border-top: 1.5px solid currentColor;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+/* Like a real stamp being pressed down. */
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: rotate(-7deg) scale(1.25);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .stamp {
+    top: 20px;
+    right: 16px;
+    transform: rotate(-7deg) scale(0.8);
+    transform-origin: top right;
+  }
+}

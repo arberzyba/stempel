@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react'
-import { ApiError, viewInvoice } from './api/client'
+import { ApiError, toApiError, validateInvoice, viewInvoice } from './api/client'
 import type { InvoiceView } from './api/types'
-import { CheckPanel } from './components/CheckPanel'
 import { ErrorMessage } from './components/ErrorMessage'
 import { Header } from './components/Header'
-import { InvoiceDocument } from './components/InvoiceDocument'
 import { UploadPanel } from './components/UploadPanel'
+import { Viewer } from './components/Viewer'
+import type { Validation } from './validation'
 import './App.css'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // must match spring.servlet.multipart.max-file-size
@@ -15,14 +15,15 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024 // must match spring.servlet.multipart.ma
 type State =
   | { kind: 'idle' }
   | { kind: 'loading'; fileName: string }
-  | { kind: 'shown'; fileName: string; invoice: InvoiceView }
+  | { kind: 'shown'; id: number; fileName: string; invoice: InvoiceView; validation: Validation }
   | { kind: 'failed'; fileName: string; error: ApiError }
 
 export default function App() {
   const [state, setState] = useState<State>({ kind: 'idle' })
-  // Lets us cancel an upload that is still running when a new file is chosen,
+  // Lets us cancel uploads that are still running when a new file is chosen,
   // so a slow old answer can't replace the newer one.
   const currentRequest = useRef<AbortController | null>(null)
+  const requestCounter = useRef(0)
 
   async function handleFile(file: File) {
     currentRequest.current?.abort()
@@ -38,18 +39,34 @@ export default function App() {
 
     const controller = new AbortController()
     currentRequest.current = controller
+    const id = ++requestCounter.current
     setState({ kind: 'loading', fileName: file.name })
 
+    // Start both requests at once. The check (especially PDF/A) takes longer,
+    // so the invoice is shown first and the report fills in when it arrives.
+    // .then(ok, fail) turns the result into a Validation, so this promise never rejects.
+    const validation: Promise<Validation> = validateInvoice(file, controller.signal).then(
+      (report) => ({ status: 'done', report, checkedAt: new Date() }),
+      (error) => ({ status: 'failed', error: toApiError(error) }),
+    )
+
+    let invoice: InvoiceView
     try {
-      const invoice = await viewInvoice(file, controller.signal)
-      setState({ kind: 'shown', fileName: file.name, invoice })
+      invoice = await viewInvoice(file, controller.signal)
     } catch (error) {
       if (controller.signal.aborted) return
-      const apiError = error instanceof ApiError
-        ? error
-        : new ApiError('Fehler', 'Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.', 0)
-      setState({ kind: 'failed', fileName: file.name, error: apiError })
+      controller.abort() // the file is unreadable, so the check is not needed
+      setState({ kind: 'failed', fileName: file.name, error: toApiError(error) })
+      return
     }
+    setState({ kind: 'shown', id, fileName: file.name, invoice, validation: { status: 'checking' } })
+
+    const result = await validation
+    if (controller.signal.aborted) return
+    // Update only if the screen still shows this file.
+    setState((current) => (current.kind === 'shown' && current.id === id
+      ? { ...current, validation: result }
+      : current))
   }
 
   function reset() {
@@ -77,10 +94,8 @@ export default function App() {
       return (
         <>
           <Header fileName={state.fileName} onReset={reset} />
-          <main className="page viewer">
-            <InvoiceDocument invoice={state.invoice} />
-            <CheckPanel invoice={state.invoice} fileName={state.fileName} />
-          </main>
+          {/* key: a new file gets a fresh Viewer, so the old selection is cleared. */}
+          <Viewer key={state.id} invoice={state.invoice} fileName={state.fileName} validation={state.validation} />
         </>
       )
   }

@@ -56,6 +56,33 @@ export interface InvoiceView {
   payment: Payment
 }
 
+// Mirrors backend/.../validation/ValidationReport.java
+
+export type Severity = 'ERROR' | 'WARNING' | 'NOTICE'
+
+/** Where in the invoice a finding belongs, so the document can highlight it. */
+export type InvoiceArea = 'seller' | 'buyer' | 'lines' | 'totals' | 'payment'
+
+export interface Finding {
+  severity: Severity
+  /** Official rule ID, e.g. "BR-CO-15"; may be empty for PDF checks. */
+  ruleId: string
+  title: string
+  /** Plain German explanation, or null if Stempel has none for this rule. */
+  explanation: string | null
+  technicalMessage: string
+  area: InvoiceArea | null
+}
+
+export interface ValidationReport {
+  valid: boolean
+  format: string | null
+  profile: string | null
+  pdfChecked: boolean
+  /** Errors first, then warnings, then notices. */
+  findings: Finding[]
+}
+
 /** Error body from the backend (RFC 9457 problem details). */
 export interface ProblemDetail {
   title?: string

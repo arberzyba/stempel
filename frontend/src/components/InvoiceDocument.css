@@ -1,4 +1,5 @@
 .doc {
+  position: relative; /* the stamp is placed relative to the page */
   flex: 999 1 600px;
   min-width: 0;
   padding: 56px;
@@ -22,6 +23,33 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding-right: 200px; /* room for the stamp */
+}
+
+@media (max-width: 640px) {
+  .doc__letterhead {
+    padding-right: 130px;
+  }
+}
+
+/* The frame around the part of the invoice a selected finding is about. */
+.doc__highlight {
+  outline: 2px solid var(--highlight-color);
+  outline-offset: 8px;
+  border-radius: 2px;
+  transition: outline-color 120ms;
+}
+
+.doc__highlight--error {
+  --highlight-color: var(--color-error);
+}
+
+.doc__highlight--warning {
+  --highlight-color: var(--color-warning);
+}
+
+.doc__highlight--notice {
+  --highlight-color: var(--color-muted);
 }
 
 .doc__seller {

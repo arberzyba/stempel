@@ -9,6 +9,7 @@
   --color-line-strong: #d6d3d1;
   --color-ok: #15803d;
   --color-error: #dc2626;
+  --color-warning: #b45309;
 
   --font-sans: 'Geist Variable', system-ui, sans-serif;
   --font-mono: 'Geist Mono Variable', ui-monospace, Consolas, monospace;
