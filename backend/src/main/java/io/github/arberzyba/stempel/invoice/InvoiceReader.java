@@ -40,6 +40,11 @@ public class InvoiceReader {
             // Mustang throws different exceptions for broken files; we turn them into one.
             throw new InvoiceReadException("Could not read the file as an e-invoice", e);
         }
+        // Checked outside the try block, so a real bug in our own code isn't hidden as "bad file".
+        if (invoice == null || xml == null || xml.isBlank()) {
+            // For example a normal PDF with no invoice XML embedded.
+            throw new InvoiceReadException("The file contains no e-invoice data", null);
+        }
         return toView(invoice, UblLegalNames.from(xml));
     }
 

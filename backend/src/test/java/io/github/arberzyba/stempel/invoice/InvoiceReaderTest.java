@@ -4,12 +4,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class InvoiceReaderTest {
@@ -55,6 +65,79 @@ class InvoiceReaderTest {
 
         assertThat(view.payment().iban()).isEqualTo("DE79000000001234567890");
         assertThat(view.payment().terms()).isEqualTo("Zahlbar sofort ohne Abzug.");
+    }
+
+    @Test
+    void readsZugferdPdf() throws Exception {
+        InvoiceView view;
+        try (InputStream file = getClass().getResourceAsStream("/samples/EN16931_Einfach.pdf")) {
+            view = reader.read(file);
+        }
+
+        assertThat(view.number()).isEqualTo("471102");
+        assertThat(view.issueDate()).isEqualTo(LocalDate.of(2024, 11, 15));
+        assertThat(view.seller().name()).isEqualTo("Lieferant GmbH");
+        assertThat(view.seller().city()).isEqualTo("München");
+        assertThat(view.buyer().name()).isEqualTo("Kunden AG Mitte");
+        assertThat(view.lines()).hasSize(2);
+
+        // Two VAT rates, sorted by rate: 7 % then 19 %.
+        assertThat(view.vat()).extracting(InvoiceView.VatLine::amount)
+                .usingElementComparator(BigDecimal::compareTo)
+                .containsExactly(new BigDecimal("19.25"), new BigDecimal("37.62"));
+
+        assertThat(view.totals().net()).isEqualByComparingTo("473.00");
+        assertThat(view.totals().vat()).isEqualByComparingTo("56.87");
+        assertThat(view.totals().gross()).isEqualByComparingTo("529.87");
+    }
+
+    @Test
+    void rejectsPdfWithoutInvoice() throws Exception {
+        // A normal one-page PDF, made with PDFBox (which Mustang already uses).
+        ByteArrayOutputStream pdf = new ByteArrayOutputStream();
+        try (PDDocument document = new PDDocument()) {
+            document.addPage(new PDPage());
+            document.save(pdf);
+        }
+
+        assertThatThrownBy(() -> reader.read(new ByteArrayInputStream(pdf.toByteArray())))
+                .isInstanceOf(InvoiceReadException.class);
+    }
+
+    /**
+     * XXE attack: the file defines an "entity" that points to a file on the server
+     * and uses it as the invoice number. A vulnerable parser would copy the secret
+     * into the result. The upload must be rejected and the secret must not leak.
+     */
+    @ParameterizedTest
+    @CsvSource({
+        "01.01a-INVOICE_uncefact.xml, rsm:CrossIndustryInvoice, <ram:ID>123456XX</ram:ID>, <ram:ID>&xxe;</ram:ID>",
+        "01.01a-INVOICE_ubl.xml,      ubl:Invoice,              <cbc:ID>123456XX</cbc:ID>, <cbc:ID>&xxe;</cbc:ID>"
+    })
+    void rejectsXxeAttack(String fileName, String rootElement, String original, String attack,
+                          @TempDir Path tempDir) throws Exception {
+        Path secret = tempDir.resolve("secret.txt");
+        Files.writeString(secret, "TOP-SECRET-12345");
+
+        String xml;
+        try (InputStream file = getClass().getResourceAsStream("/samples/" + fileName)) {
+            xml = new String(file.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        String doctype = "<!DOCTYPE " + rootElement
+                + " [<!ENTITY xxe SYSTEM \"" + secret.toUri() + "\">]>\n";
+        String malicious = xml.replaceFirst("\\?>\\s*", "?>\n" + doctype).replaceFirst(original, attack);
+        assertThat(malicious).contains("<!DOCTYPE", "&xxe;");
+
+        assertThatThrownBy(() -> reader.read(
+                new ByteArrayInputStream(malicious.getBytes(StandardCharsets.UTF_8))))
+                .isInstanceOf(InvoiceReadException.class)
+                .satisfies(e -> assertThat(stackTraceOf(e)).doesNotContain("TOP-SECRET"));
+    }
+
+    private static String stackTraceOf(Throwable e) {
+        StringWriter text = new StringWriter();
+        e.printStackTrace(new PrintWriter(text));
+        return text.toString();
     }
 
     @Test
