@@ -28,11 +28,19 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
+		<mustang.version>2.26.0</mustang.version>
 	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc</artifactId>
+		</dependency>
+
+		<!-- Reads and writes ZUGFeRD / Factur-X / XRechnung invoices -->
+		<dependency>
+			<groupId>org.mustangproject</groupId>
+			<artifactId>library</artifactId>
+			<version>${mustang.version}</version>
 		</dependency>
 
 		<dependency>
