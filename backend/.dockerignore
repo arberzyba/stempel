@@ -1,0 +1,7 @@
+# Not needed to build the image (keeps the build fast and the context small)
+target/
+.testsuite/
+.idea/
+.vscode/
+*.iml
+HELP.md

@@ -1,0 +1,43 @@
+# Start Stempel:  docker compose up --build
+# Then open http://localhost:8080
+name: stempel
+
+services:
+  backend:
+    build: ./backend
+    image: stempel-backend:local
+    restart: unless-stopped
+    # No "ports": the backend is only reachable from the frontend container.
+    # The container can't write to its own files; /tmp lives in memory and is gone
+    # after a restart. So uploads can't end up on disk.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      # The Java image has no curl, so bash opens the connection itself.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /actuator/health HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q UP <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build: ./frontend
+    image: stempel-frontend:local
+    restart: unless-stopped
+    ports:
+      # Only reachable from this computer. To use Stempel from other devices in
+      # your network, change it to "8080:8080".
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp # nginx keeps its temp files and pid here
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true

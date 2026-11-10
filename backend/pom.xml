@@ -36,6 +36,12 @@
 			<artifactId>spring-boot-starter-webmvc</artifactId>
 		</dependency>
 
+		<!-- Health endpoint, used by the Docker health check -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
 		<!-- Reads and writes ZUGFeRD / Factur-X / XRechnung invoices -->
 		<dependency>
 			<groupId>org.mustangproject</groupId>
