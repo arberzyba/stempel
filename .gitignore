@@ -1,0 +1,21 @@
+# Claude files (never commit)
+CLAUDE.md
+.claude/
+
+# Java / Maven
+target/
+
+# Node / frontend
+node_modules/
+dist/
+
+# Local environment and secrets
+.env
+.env.*
+
+# Editors and OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
