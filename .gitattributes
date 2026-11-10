@@ -1,0 +1,5 @@
+# Never change line endings in binary files (a PDF breaks if its bytes move)
+*.pdf binary
+*.png binary
+*.gif binary
+*.jpg binary
