@@ -43,6 +43,13 @@
 			<version>${mustang.version}</version>
 		</dependency>
 
+		<!-- Checks invoices against EN 16931 / XRechnung rules (Schematron) and PDF/A -->
+		<dependency>
+			<groupId>org.mustangproject</groupId>
+			<artifactId>validator</artifactId>
+			<version>${mustang.version}</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
