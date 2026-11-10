@@ -1,0 +1,70 @@
+.check {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.check__card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+}
+
+.check__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.check__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.check__badge {
+  font-size: 11px;
+  color: var(--color-muted);
+}
+
+.check__status {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.check__text {
+  margin: 0;
+  color: var(--color-ink-soft);
+}
+
+.check__facts {
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-line);
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 6px 16px;
+  font-size: 13px;
+}
+
+.check__facts dt {
+  color: var(--color-muted);
+}
+
+.check__facts dd {
+  margin: 0;
+}
+
+.check__note {
+  margin: 0 4px;
+  font-size: 13px;
+}

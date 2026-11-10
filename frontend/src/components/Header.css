@@ -1,0 +1,49 @@
+.header {
+  border-bottom: 1px solid var(--color-line);
+  background: var(--color-surface);
+}
+
+.header__inner {
+  min-height: 56px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.header__name {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.header__slash {
+  color: var(--color-line-strong);
+}
+
+.header__file {
+  font-size: 13px;
+  color: var(--color-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header__tag {
+  font-size: 12px;
+  color: var(--color-muted);
+}

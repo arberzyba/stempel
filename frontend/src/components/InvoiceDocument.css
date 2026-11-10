@@ -1,0 +1,171 @@
+.doc {
+  flex: 999 1 600px;
+  min-width: 0;
+  padding: 56px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 1px 2px rgb(10 10 10 / 4%), 0 12px 32px -12px rgb(10 10 10 / 8%);
+}
+
+@media (max-width: 640px) {
+  .doc {
+    padding: 28px 20px;
+    gap: 28px;
+  }
+}
+
+.doc__letterhead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.doc__seller {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.doc__seller-address {
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.doc__head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.doc__recipient {
+  flex: 1 1 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-style: normal;
+}
+
+/* The small sender line above the recipient, as in an envelope window. */
+.doc__return-line {
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: var(--color-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.doc__recipient-name {
+  font-weight: 500;
+}
+
+.doc__meta {
+  flex: 0 1 280px;
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-content: start;
+  gap: 6px 20px;
+  font-size: 13px;
+}
+
+.doc__meta dt {
+  color: var(--color-muted);
+}
+
+.doc__meta dd {
+  margin: 0;
+}
+
+.doc__title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.doc__table-wrap {
+  margin-top: -16px;
+  overflow-x: auto;
+}
+
+.doc__table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.doc__table th {
+  padding: 8px 12px 8px 0;
+  border-bottom: 1px solid var(--color-ink);
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.doc__table td {
+  padding: 14px 12px 14px 0;
+  border-bottom: 1px solid var(--color-line);
+  vertical-align: top;
+}
+
+.doc__table .num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.doc__table th:last-child,
+.doc__table td:last-child {
+  padding-right: 0;
+}
+
+.doc__table td.mono {
+  font-size: 13px;
+}
+
+.doc__line-description {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.doc__totals {
+  margin-top: -16px;
+  margin-left: auto;
+  width: min(100%, 340px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.doc__totals-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.doc__totals-row--grand {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-ink);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.doc__payment {
+  padding-top: 20px;
+  border-top: 1px solid var(--color-line);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--color-ink-soft);
+}
