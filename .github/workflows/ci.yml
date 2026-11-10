@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only access to the repository is all this workflow needs.
+permissions:
+  contents: read
+
+# A new push to the same branch cancels the run that is still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (Java tests + KoSIT test suite)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven # keeps downloaded dependencies between runs
+
+      # The official test suite is downloaded, not committed. Cached by version,
+      # so it is only downloaded again when the script (and its version) changes.
+      - name: Cache KoSIT test suite
+        uses: actions/cache@v6
+        with:
+          path: backend/.testsuite
+          key: kosit-${{ hashFiles('backend/scripts/fetch-kosit-testsuite.sh') }}
+
+      - name: Download KoSIT test suite
+        run: '[ -d .testsuite/kosit/instances ] || ./scripts/fetch-kosit-testsuite.sh'
+
+      - name: Run tests
+        run: ./mvnw -B verify
+
+      # On failure, keep the test reports so you can see what broke.
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: backend-test-reports
+          path: backend/target/surefire-reports/
+
+  frontend:
+    name: Frontend (lint, tests, build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci --no-audit --no-fund
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build # also type-checks with tsc
+
+  docker:
+    name: Docker (build images + smoke test)
+    needs: [backend, frontend] # only if both jobs passed
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Build and start
+        run: docker compose up --build --detach --wait --wait-timeout 180
+
+      # Upload a real invoice through nginx, like a user would.
+      - name: Smoke test
+        run: |
+          curl -fsS http://localhost:8080/ | grep -q '<title>Stempel'
+          curl -fsS -F "file=@backend/src/test/resources/samples/01.01a-INVOICE_ubl.xml" \
+            http://localhost:8080/api/invoices/view | grep -q '"number":"123456XX"'
+          curl -fsS -F "file=@backend/src/test/resources/samples/EN16931_Einfach.pdf" \
+            http://localhost:8080/api/invoices/validate | grep -q '"valid":true'
+          echo "Stempel works end to end."
+
+      - name: Show logs
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop
+        if: always()
+        run: docker compose down
